@@ -8,7 +8,7 @@ const passport = require("passport");
 const passportLocalMongoose = require("passport-local-mongoose");
 //const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const findOrCreate = require('mongoose-findorcreate');
-
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
  
 // const currentDay = require(__dirname + "/date.js"); // We are requiring the module we created in date.js,which binds all of the exports to the const calld date
 const _ = require("lodash");
@@ -40,7 +40,7 @@ app.use(session({
 
 
 
-mongoose.connect("mongodb://localhost:27017/memeUserDB", {useNewUrlParser: true , useUnifiedTopology: true});
+mongoose.connect("mongodb+srv://admin-souvik:m34adne12@cluster0.8tho9.mongodb.net/AnonymousBlogDB", {useNewUrlParser: true , useUnifiedTopology: true});
 //mongoose.set("useCreateIndex", true);
 
 
@@ -69,6 +69,19 @@ passport.deserializeUser(function(id, done) {
 });
 
 
+passport.use(new GoogleStrategy({
+  clientID: process.env.CLIENT_ID,
+  clientSecret: process.env.CLIENT_SECRET,
+  callbackURL: "http://localhost:3000/auth/google/blog-home"
+},
+function(accessToken, refreshToken, profile, cb) {
+  User.findOrCreate({ googleId: profile.id }, function (err, user) {
+    return cb(err, user);
+  });
+}
+));
+
+
 const postSchema = {
 
   title: String,
@@ -87,6 +100,23 @@ app.get("/", function(req, res){
 app.get("/register" , function(req , res){
     res.render("register");
 });
+
+app.get('/auth/google',
+  passport.authenticate('google', { scope: ['profile'] 
+}));
+
+
+app.get('/auth/google/blog-home', 
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  function(req, res) {
+    // Successful authentication, redirect home.
+    res.redirect('/blog-home');
+  }
+);
+
+
+
+
 
 app.get("/blog-home" , function(req , res) {
    
